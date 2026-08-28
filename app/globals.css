@@ -341,7 +341,7 @@ body:has(.events-container) .hero-sub {
 }
 
 .event-image-wrap {
-  height: 190px;
+  aspect-ratio: 16 / 10;
   overflow: hidden;
   position: relative;
   background: var(--navy-800);
@@ -723,7 +723,7 @@ body:has(.events-container) .hero-sub {
   }
 
   .event-image-wrap {
-    height: 210px;
+    height: auto;
   }
 }
 
@@ -889,12 +889,32 @@ body:has(.event-detail-container) .topbar::after {
 }
 
 .event-detail-overlay {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 12px;
   position: absolute;
   inset: 18px 18px auto;
   z-index: 1;
+}
+
+.event-detail-overlay .event-category {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  position: static;
+  justify-self: start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.event-detail-overlay .status-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  justify-self: end;
+  max-width: 100%;
+  text-align: right;
 }
 
 .event-detail-layout {
@@ -1051,6 +1071,10 @@ body:has(.event-detail-container) .topbar::after {
   .event-detail-hero {
     height: 280px;
   }
+
+  .event-detail-overlay {
+    inset: 12px 12px auto;
+  }
 }
 
 /* ---------- Admin surfaces ---------- */
@@ -1138,13 +1162,17 @@ body:has(.admin-surface) .admin-table td {
 }
 
 .admin-event-card {
-  display: block;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
   min-width: 0;
   background: var(--reference-surface);
   border: 1px solid #292b33;
   border-radius: 8px;
   color: var(--reference-white);
-  padding: 18px;
+  min-height: 142px;
+  padding: 9px;
   text-decoration: none;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
@@ -1152,6 +1180,103 @@ body:has(.admin-surface) .admin-table td {
 .admin-event-card:hover {
   border-color: var(--reference-cyan);
   transform: translateY(-2px);
+}
+
+.admin-event-card-copy {
+  min-width: 0;
+  padding: 5px 0 5px 7px;
+}
+
+.admin-event-card .event-date-chip {
+  font-size: 10px;
+  margin-bottom: 8px;
+  padding: 3px 7px;
+}
+
+.admin-event-card .event-title {
+  font-size: 16px;
+  line-height: 1.2;
+  margin-bottom: 5px;
+}
+
+.admin-event-card .event-meta,
+.admin-event-card .helper-text {
+  font-size: 12px;
+}
+
+.admin-event-image {
+  display: block;
+  flex: 0 0 132px;
+  aspect-ratio: 4 / 3;
+  width: 132px;
+  height: 99px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.create-event-trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 15px 18px;
+  border: 1px solid #292b33;
+  border-radius: 8px;
+  background: var(--reference-surface);
+  color: var(--reference-white);
+  cursor: pointer;
+  text-align: left;
+}
+
+.create-event-trigger:hover {
+  border-color: var(--reference-cyan);
+}
+
+.create-event-trigger > span:last-child {
+  display: grid;
+  gap: 3px;
+}
+
+.create-event-trigger strong {
+  font-family: var(--font-display);
+  font-size: 15px;
+}
+
+.create-event-trigger small {
+  color: var(--reference-cyan-soft);
+  font-size: 12px;
+}
+
+.create-event-plus {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid var(--reference-cyan);
+  border-radius: 50%;
+  color: var(--reference-cyan);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.create-event-form {
+  margin-top: 24px;
+}
+
+.create-event-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.create-event-heading h2 {
+  color: var(--reference-white);
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0;
 }
 
 .category-manager {
@@ -1282,6 +1407,24 @@ body:has(.admin-surface) .admin-table td {
   .event-schedule-fields .field:last-child {
     flex-basis: 100%;
     width: auto !important;
+  }
+
+  .admin-event-card {
+    min-height: 124px;
+  }
+
+  .admin-event-image {
+    flex: 0 0 104px;
+    width: 104px;
+    height: 78px;
+  }
+
+  .admin-event-card-copy {
+    padding-left: 12px;
+  }
+
+  .admin-event-card .event-title {
+    font-size: 15px;
   }
 }
 

@@ -6,17 +6,18 @@ import { formatEventDate, formatEventTime } from "@/lib/format";
 import TopBar from "@/components/TopBar";
 import CreateEventForm from "@/components/CreateEventForm";
 import CategoryManager from "@/components/CategoryManager";
+import { getEventImage } from "@/lib/eventImages";
 
 export const revalidate = 0;
 
 async function getEventsWithCounts() {
   let { data: events, error } = await supabaseAdmin
     .from("events")
-    .select("id, title, location, event_date, event_time, event_end_time, capacity")
+    .select("id, title, location, event_date, event_time, event_end_time, capacity, image_url")
     .order("event_date", { ascending: true })
     .order("event_time", { ascending: true });
 
-  if (error?.message?.includes("event_end_time")) {
+  if (error?.message?.includes("event_end_time") || error?.message?.includes("image_url")) {
     const fallback = await supabaseAdmin
       .from("events")
       .select("id, title, location, event_date, event_time, capacity")
@@ -62,7 +63,6 @@ export default async function AdminPage() {
         </div>
 
         <CreateEventForm categories={categories} />
-        <CategoryManager categories={categories} />
 
         <h2 className="section-heading">All events</h2>
         {events.length === 0 ? (
@@ -71,24 +71,28 @@ export default async function AdminPage() {
           <ul className="admin-event-list">
             {events.map((event) => {
               const spotsLeft = Math.max(event.capacity - event.booked, 0);
+              const image = event.image_url || getEventImage(event.title).src;
               return (
                 <li key={event.id}>
                   <Link href={`/admin/events/${event.id}`} className="admin-event-card">
-                    <span className="event-date-chip">
-                      {formatEventDate(event.event_date)} &middot; {formatEventTime(event.event_time)}{event.event_end_time ? ` - ${formatEventTime(event.event_end_time)}` : ""}
-                    </span>
-                    <h2 className="event-title">{event.title}</h2>
-                    <p className="event-meta">{event.location}</p>
-                    <p className="helper-text" style={{ margin: 0 }}>
-                      {event.booked} / {event.capacity} booked &middot;{" "}
-                      {spotsLeft === 0 ? "Full" : `${spotsLeft} left`}
-                    </p>
+                    <div className="admin-event-card-copy">
+                      <span className="event-date-chip">
+                        {formatEventDate(event.event_date)} &middot; {formatEventTime(event.event_time)}{event.event_end_time ? ` - ${formatEventTime(event.event_end_time)}` : ""}
+                      </span>
+                      <h2 className="event-title">{event.title}</h2>
+                      <p className="event-meta">{event.location || "Location announced soon"}</p>
+                      <p className="helper-text" style={{ margin: 0 }}>
+                        {event.booked} / {event.capacity} booked &middot; {spotsLeft === 0 ? "Full" : `${spotsLeft} left`}
+                      </p>
+                    </div>
+                    <img className="admin-event-image" src={image} alt="" />
                   </Link>
                 </li>
               );
             })}
           </ul>
         )}
+        <CategoryManager categories={categories} />
       </main>
     </>
   );

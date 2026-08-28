@@ -24,6 +24,7 @@ export default function CreateEventForm({ categories }) {
   const [form, setForm] = useState(initialState);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -55,6 +56,7 @@ export default function CreateEventForm({ categories }) {
 
       setForm(initialState);
       setStatus("idle");
+      setIsOpen(false);
       router.refresh();
     } catch {
       setError("Couldn't reach the server. Try again.");
@@ -62,11 +64,27 @@ export default function CreateEventForm({ categories }) {
     }
   }
 
+  if (!isOpen) {
+    return (
+      <button type="button" className="create-event-trigger" onClick={() => setIsOpen(true)}>
+        <span className="create-event-plus" aria-hidden="true">+</span>
+        <span>
+          <strong>Create new event</strong>
+          <small>Add a session, image, and booking details</small>
+        </span>
+      </button>
+    );
+  }
+
   return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
-      <h2 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 18 }}>
-        New event
-      </h2>
+    <form className="form-card create-event-form" onSubmit={handleSubmit}>
+      <div className="create-event-heading">
+        <div>
+          <p className="section-kicker">Event setup</p>
+          <h2>New event</h2>
+        </div>
+        <button type="button" className="text-button" onClick={() => setIsOpen(false)}>Close</button>
+      </div>
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="field">
