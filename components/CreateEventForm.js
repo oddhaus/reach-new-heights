@@ -5,14 +5,21 @@ import { useRouter } from "next/navigation";
 
 const initialState = {
   title: "",
-  description: "",
+  category_id: "",
+  difficulty: "All Levels",
+  short_description: "",
+  full_description: "",
+  image: null,
   location: "",
+  address: "",
+  meeting_instructions: "",
   event_date: "",
   event_time: "",
+  event_end_time: "",
   capacity: 20,
 };
 
-export default function CreateEventForm() {
+export default function CreateEventForm({ categories }) {
   const router = useRouter();
   const [form, setForm] = useState(initialState);
   const [status, setStatus] = useState("idle");
@@ -30,8 +37,13 @@ export default function CreateEventForm() {
     try {
       const res = await fetch("/api/events", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: (() => {
+          const payload = new FormData();
+          Object.entries(form).forEach(([key, value]) => {
+            if (value !== null && value !== "") payload.append(key, value);
+          });
+          return payload;
+        })(),
       });
       const data = await res.json();
 
@@ -69,7 +81,15 @@ export default function CreateEventForm() {
       </div>
 
       <div className="field">
-        <label htmlFor="location">Location</label>
+        <label htmlFor="category_id">Category</label>
+        <select id="category_id" value={form.category_id} onChange={(e) => update("category_id", e.target.value)} required>
+          <option value="">Select a category</option>
+          {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="location">Location name</label>
         <input
           id="location"
           value={form.location}
@@ -78,7 +98,7 @@ export default function CreateEventForm() {
         />
       </div>
 
-      <div style={{ display: "flex", gap: 12 }}>
+      <div className="event-schedule-fields">
         <div className="field" style={{ flex: 1 }}>
           <label htmlFor="event_date">Date</label>
           <input
@@ -99,6 +119,10 @@ export default function CreateEventForm() {
             onChange={(e) => update("event_time", e.target.value)}
           />
         </div>
+        <div className="field" style={{ flex: 1 }}>
+          <label htmlFor="event_end_time">End time</label>
+          <input id="event_end_time" type="time" value={form.event_end_time} onChange={(e) => update("event_end_time", e.target.value)} />
+        </div>
         <div className="field" style={{ width: 110 }}>
           <label htmlFor="capacity">Capacity</label>
           <input
@@ -110,17 +134,46 @@ export default function CreateEventForm() {
             onChange={(e) => update("capacity", e.target.value)}
           />
         </div>
+        <div className="field" style={{ flex: 1 }}>
+          <label htmlFor="difficulty">Difficulty</label>
+          <select id="difficulty" value={form.difficulty} onChange={(e) => update("difficulty", e.target.value)}>
+            <option>All Levels</option>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
+          </select>
+        </div>
       </div>
 
       <div className="field">
-        <label htmlFor="description">Description (optional)</label>
-        <textarea
-          id="description"
-          rows={3}
-          value={form.description}
-          onChange={(e) => update("description", e.target.value)}
-          placeholder="Anything members should know before booking"
+        <label htmlFor="address">Address</label>
+        <input id="address" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="e.g. Trailhead Lot #2, Angeles National Forest, CA" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="meeting_instructions">Meeting point instructions</label>
+        <input id="meeting_instructions" value={form.meeting_instructions} onChange={(e) => update("meeting_instructions", e.target.value)} placeholder="e.g. Look for the cyan canopy at the trailhead gate." />
+      </div>
+
+      <div className="field">
+        <label htmlFor="short_description">Short description</label>
+        <textarea id="short_description" rows={2} value={form.short_description} onChange={(e) => update("short_description", e.target.value)} placeholder="One sentence overview for cards" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="full_description">Full description</label>
+        <textarea id="full_description" rows={4} value={form.full_description} onChange={(e) => update("full_description", e.target.value)} placeholder="Detailed breakdown of workout and benefits" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="image">Event image (optional)</label>
+        <input
+          id="image"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => update("image", e.target.files?.[0] || null)}
         />
+        <p className="helper-text">JPG, PNG, or WebP up to 5 MB.</p>
       </div>
 
       <button type="submit" className="btn btn-amber" disabled={status === "submitting"}>

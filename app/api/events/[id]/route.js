@@ -3,14 +3,16 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAdminRequest } from "@/lib/adminAuth";
 
 export async function GET(request, { params }) {
-  if (!isAdminRequest()) {
+  if (!(await isAdminRequest())) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
+
+  const { id } = await params;
 
   const { data: event, error } = await supabaseAdmin
     .from("events")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error || !event) {
@@ -20,18 +22,20 @@ export async function GET(request, { params }) {
   const { data: bookings } = await supabaseAdmin
     .from("bookings")
     .select("id, name, phone, email, created_at")
-    .eq("event_id", params.id)
+    .eq("event_id", id)
     .order("created_at", { ascending: true });
 
   return NextResponse.json({ event, bookings: bookings || [] });
 }
 
 export async function DELETE(request, { params }) {
-  if (!isAdminRequest()) {
+  if (!(await isAdminRequest())) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { error } = await supabaseAdmin.from("events").delete().eq("id", params.id);
+  const { id } = await params;
+
+  const { error } = await supabaseAdmin.from("events").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -15,9 +15,14 @@ A small Next.js + Supabase app that replaces the Bubble app:
 
 1. Go to [supabase.com](https://supabase.com) and create a free project.
 2. In the dashboard, open **SQL Editor** → **New query**, paste the contents
-   of `supabase/schema.sql`, and run it. This creates the `events` and
+  of `supabase/schema.sql`, select the entire file, and run it. This creates the `events` and
    `bookings` tables, locks them down with Row Level Security, and adds the
    booking function that prevents overbooking.
+
+  For an existing project, run the entire `supabase/migrate-event-fields.sql`
+  file instead to add event images, time ranges, the five default categories,
+  and the expanded event fields. Do not run a highlighted portion of either
+  file.
 3. Go to **Project Settings → API**. You'll need three values from here:
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`

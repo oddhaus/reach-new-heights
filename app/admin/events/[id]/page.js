@@ -10,14 +10,16 @@ import ShareLinkButton from "@/components/ShareLinkButton";
 export const revalidate = 0;
 
 export default async function AdminEventPage({ params }) {
-  if (!isAdminRequest()) {
+  if (!(await isAdminRequest())) {
     redirect("/admin/login");
   }
+
+  const { id } = await params;
 
   const { data: event } = await supabaseAdmin
     .from("events")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (!event) notFound();
@@ -25,22 +27,23 @@ export default async function AdminEventPage({ params }) {
   const { data: bookings } = await supabaseAdmin
     .from("bookings")
     .select("id, name, phone, email, created_at")
-    .eq("event_id", params.id)
+    .eq("event_id", id)
     .order("created_at", { ascending: true });
 
   const list = bookings || [];
 
   return (
     <>
-      <TopBar tag="Admin dashboard" />
-      <main className="container">
-        <Link href="/admin" className="back-link">
-          &larr; All events
-        </Link>
-
-        <span className="event-date-chip">
-          {formatEventDate(event.event_date)} &middot; {formatEventTime(event.event_time)}
-        </span>
+      <TopBar tag="Admin dashboard" isAdmin />
+      <main className="container admin-surface">
+        <div className="event-detail-nav">
+          <Link href="/admin" className="back-link">
+            &larr; All events
+          </Link>
+          <span className="event-date-chip">
+            {formatEventDate(event.event_date)} &middot; {formatEventTime(event.event_time)}
+          </span>
+        </div>
         <h1 className="hero-heading">{event.title}</h1>
         <p className="hero-sub">
           {event.location} &middot; {list.length} / {event.capacity} booked

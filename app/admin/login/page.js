@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
   return (
     <>
       <TopBar tag="Admin" />
-      <main className="container" style={{ maxWidth: 420 }}>
+      <main className="container admin-surface admin-login-surface" style={{ maxWidth: 420 }}>
         <h1 className="hero-heading">Admin login</h1>
         <p className="hero-sub">Enter the admin password to manage events.</p>
 

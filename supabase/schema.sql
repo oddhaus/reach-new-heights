@@ -1,6 +1,18 @@
--- Run this once in your Supabase project's SQL Editor (Dashboard -> SQL Editor -> New query)
+-- Run this entire file once in your Supabase project's SQL Editor.
+-- Do not run only a highlighted section: the booking function at the end uses
+-- a dollar-quoted body and must include its closing end; and $$; statements.
 
 create extension if not exists pgcrypto;
+
+create table if not exists categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  created_at timestamptz not null default now()
+);
+
+insert into categories (name)
+values ('Mountain Hike'), ('Beach Workout'), ('Pilates'), ('Yoga'), ('Boxing')
+on conflict (name) do nothing;
 
 create table if not exists events (
   id uuid primary key default gen_random_uuid(),
@@ -9,9 +21,34 @@ create table if not exists events (
   location text,
   event_date date not null,
   event_time time not null,
+  event_end_time time,
   capacity integer not null default 20,
+  image_url text,
+  category_id uuid references categories(id) on delete set null,
+  difficulty text not null default 'All Levels',
+  address text,
+  meeting_instructions text,
+  short_description text,
+  full_description text,
   created_at timestamptz not null default now()
 );
+
+alter table events add column if not exists image_url text;
+alter table events add column if not exists event_end_time time;
+alter table events add column if not exists category_id uuid references categories(id) on delete set null;
+alter table events add column if not exists difficulty text not null default 'All Levels';
+alter table events add column if not exists address text;
+alter table events add column if not exists meeting_instructions text;
+alter table events add column if not exists short_description text;
+alter table events add column if not exists full_description text;
+
+alter table categories enable row level security;
+drop policy if exists "Public can view categories" on categories;
+create policy "Public can view categories" on categories for select using (true);
+
+insert into storage.buckets (id, name, public)
+values ('event-images', 'event-images', true)
+on conflict (id) do update set public = true;
 
 create table if not exists bookings (
   id uuid primary key default gen_random_uuid(),
