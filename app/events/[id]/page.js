@@ -105,7 +105,7 @@ export default async function EventPage({ params }) {
               {event.difficulty ? <span>Difficulty <strong>{event.difficulty}</strong></span> : null}
               {event.address ? <span>Address <strong>{event.address}</strong></span> : null}
               {event.meeting_instructions ? <span>Meeting point <strong>{event.meeting_instructions}</strong></span> : null}
-              {basePrice > 0 ? <span>Price <strong>{formatCurrency(basePrice)}</strong></span> : null}
+              {basePrice > 0 ? <span className="event-detail-price">Price <strong>{formatCurrency(basePrice)}</strong></span> : null}
             </div>
             <p className="event-detail-description">
               {event.full_description || event.description || "A focused session designed to help you move stronger, feel better, and keep your momentum going."}
@@ -117,7 +117,13 @@ export default async function EventPage({ params }) {
                 <ul className="optional-addons-list" style={{ margin: "12px 0 0", paddingLeft: 18, display: "grid", gap: 8 }}>
                   {extraActivities.map((activity, index) => (
                     <li key={`${activity.name}-${index}`}>
-                      <strong>{activity.name}</strong> — {formatCurrency(activity.price || 0)}
+                      <strong>{activity.name}</strong>
+                      <span
+                        className="optional-addon-divider"
+                        aria-hidden="true"
+                        style={{ width: "100%", height: 1, backgroundColor: "var(--reference-cyan)" }}
+                      />
+                      <strong>{formatCurrency(activity.price || 0)}</strong>
                     </li>
                   ))}
                 </ul>
