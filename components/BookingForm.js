@@ -2,6 +2,42 @@
 
 import { useMemo, useState } from "react";
 
+function CopyPaymentNumber({ number }) {
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(number);
+      alert(`${number} copied to your clipboard.`);
+    } catch {
+      alert(`Copy failed. Please select and copy ${number} manually.`);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className="btn btn-copy"
+      onClick={handleCopy}
+      title={`Copy ${number}`}
+      aria-label={`Copy ${number}`}
+      style={{
+        width: 28,
+        height: 28,
+        padding: 0,
+        marginLeft: 6,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        verticalAlign: "middle",
+      }}
+    >
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="11" height="11" rx="2" />
+        <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+      </svg>
+    </button>
+  );
+}
+
 export default function BookingForm({ eventId, spotsLeft, extraActivities = [] }) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
@@ -319,7 +355,7 @@ export default function BookingForm({ eventId, spotsLeft, extraActivities = [] }
 
           <div className="field" style={{ marginBottom: 18 }}>
             <p className="helper-text" style={{ margin: "0 0 10px" }}><strong>Policy:</strong> Submitting this form without payment does not guarantee a seat. Payments must be received within 24hrs after registration to confirm participation.</p>
-            <p className="helper-text" style={{ margin: "0 0 10px" }}><strong>Non-Refundable Clause:</strong> Payments are non-refundable if you cancel within three days of the event or after Aug 31, 2026 1:28 pm or fail to attend (no-show).</p>
+            <p className="helper-text" style={{ margin: "0 0 10px" }}><strong>Non-Refundable Clause:</strong> Payments are non-refundable if you cancel within three days of the event or fail to attend (no-show).</p>
           </div>
 
           <label style={{ display: "flex", alignItems: "flex-start", gap: 10, color: "var(--reference-white)", marginBottom: 18 }}>
@@ -388,14 +424,11 @@ export default function BookingForm({ eventId, spotsLeft, extraActivities = [] }
 
           <div className="form-card" style={{ background: "rgba(15, 16, 20, 0.7)", borderColor: "rgba(0,194,223,0.28)", color: "var(--reference-white)", marginBottom: 18 }}>
             <p style={{ margin: "0 0 12px" }}><strong>Payment Information</strong></p>
-            <p style={{ margin: "0 0 8px" }}><strong>MoMo Details</strong></p>
-            <p style={{ margin: "0 0 6px" }}>• Mobile Money (Telecel) Number: 020 597 9964</p>
-            <p style={{ margin: "0 0 6px" }}>• Name: Emmanuel Kwabena Boafo Owusu-Addo</p>
-            <p style={{ margin: "0 0 12px" }}><strong>Bank Details</strong></p>
-            <p style={{ margin: "0 0 6px" }}>• Name: Emmanuel Kwabena Boafo Owusu-Addo</p>
-            <p style={{ margin: "0 0 6px" }}>• Account number: 1091010020778</p>
-            <p style={{ margin: "0 0 12px" }}>• Bank: Ghana Commercial Bank</p>
-            <p style={{ margin: "0 0 0" }}>Please confirm your payment using the provided MoMo number or bank details. Contact support via WhatsApp at 0555363505 for assistance.</p>
+            <p style={{ margin: "0 0 6px" }}><strong>Mobile Money number :</strong> 024 865 2951<CopyPaymentNumber number="024 865 2951" /></p>
+            <p style={{ margin: "0 0 12px" }}><strong>Name:</strong> Reach New Heights/Emmanuel Kwabena Boafo Owusu-Addo</p>
+            <p style={{ margin: "0 0 12px" }}>Please confirm your payment by sending your payment receipt via WhatsApp to 0555363505<CopyPaymentNumber number="0555363505" />.</p>
+            <p style={{ margin: "0 0 12px" }}>For any assistance or enquiries regarding your registration, please contact our support team via WhatsApp on 0555363505<CopyPaymentNumber number="0555363505" />.</p>
+            <p style={{ margin: "0" }}>Thank you, and we look forward to having you join us!</p>
           </div>
 
           <div className="btn-row booking-actions">
