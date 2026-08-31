@@ -93,7 +93,7 @@ export default async function AdminEventPage({ params }) {
           {event.location} &middot; {list.length} / {event.capacity} booked &middot; {event.base_price ? formatCurrency(event.base_price) : "Free"}
         </p>
 
-        <div className="btn-row" style={{ marginBottom: 24 }}>
+        <div className="btn-row" style={{ marginBottom: 24, justifyContent: "flex-end", gap: 10 }}>
           <ShareLinkButton eventId={event.id} eventSlug={event.slug} title={event.title} />
           <DeleteEventButton eventId={event.id} />
         </div>
