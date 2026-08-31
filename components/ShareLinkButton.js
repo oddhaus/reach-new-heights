@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 
-export default function ShareLinkButton({ eventId, title }) {
+export default function ShareLinkButton({ eventId, eventSlug, title }) {
   const [copied, setCopied] = useState(false);
 
   function getUrl() {
-    return `${window.location.origin}/events/${eventId}`;
+    return `${window.location.origin}/events/${eventSlug || eventId}`;
   }
 
   async function handleCopy() {
@@ -26,7 +26,7 @@ export default function ShareLinkButton({ eventId, title }) {
 
   return (
     <>
-      <button className="btn btn-ghost" onClick={handleCopy}>
+      <button className="btn btn-copy" onClick={handleCopy}>
         {copied ? "Link copied!" : "Copy booking link"}
       </button>
       <button className="btn btn-amber" onClick={handleWhatsAppShare}>

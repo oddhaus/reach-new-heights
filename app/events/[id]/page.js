@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { formatEventDate, formatEventTime } from "@/lib/format";
+import { formatEventDate, formatEventTime, formatCurrency } from "@/lib/format";
 import { getEventImage } from "@/lib/eventImages";
 import TopBar from "@/components/TopBar";
 import BookingForm from "@/components/BookingForm";
@@ -11,16 +11,35 @@ export const revalidate = 0;
 async function getEvent(id) {
   let { data: event, error } = await supabase
     .from("events")
-    .select("id, title, description, location, event_date, event_time, event_end_time, capacity, image_url, category_id, difficulty, address, meeting_instructions, short_description, full_description, category:categories(name)")
+    .select("id, slug, title, description, location, event_date, event_time, event_end_time, capacity, image_url, category_id, difficulty, address, meeting_instructions, short_description, full_description, base_price, extra_activities, category:categories(name)")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (error?.message?.includes("image_url")) {
+  if (!event) {
+    const slugMatch = await supabase
+      .from("events")
+      .select("id, slug, title, description, location, event_date, event_time, event_end_time, capacity, image_url, category_id, difficulty, address, meeting_instructions, short_description, full_description, base_price, extra_activities, category:categories(name)")
+      .eq("slug", id)
+      .maybeSingle();
+
+    event = slugMatch.data;
+    error = slugMatch.error;
+  }
+
+  if (
+    error && (
+      error.message?.includes("image_url") ||
+      error.message?.includes("base_price") ||
+      error.message?.includes("extra_activities") ||
+      error.message?.includes("slug") ||
+      error.message?.includes("column \"slug\"")
+    )
+  ) {
     const fallback = await supabase
       .from("events")
       .select("id, title, description, location, event_date, event_time, capacity")
       .eq("id", id)
-      .single();
+      .maybeSingle();
     event = fallback.data;
     error = fallback.error;
   }
@@ -45,6 +64,8 @@ export default async function EventPage({ params }) {
   const isFull = spotsLeft === 0;
   const pct = Math.min((event.booked / event.capacity) * 100, 100);
   const image = event.image_url ? { src: event.image_url, category: event.category?.name || getEventImage(event.title).category } : { ...getEventImage(event.title), category: event.category?.name || getEventImage(event.title).category };
+  const extraActivities = Array.isArray(event.extra_activities) ? event.extra_activities : [];
+  const basePrice = Number(event.base_price ?? 0);
 
   return (
     <>
@@ -80,10 +101,24 @@ export default async function EventPage({ params }) {
               {event.difficulty ? <span>Difficulty <strong>{event.difficulty}</strong></span> : null}
               {event.address ? <span>Address <strong>{event.address}</strong></span> : null}
               {event.meeting_instructions ? <span>Meeting point <strong>{event.meeting_instructions}</strong></span> : null}
+              {basePrice > 0 ? <span>Price <strong>{formatCurrency(basePrice)}</strong></span> : null}
             </div>
             <p className="event-detail-description">
               {event.full_description || event.description || "A focused session designed to help you move stronger, feel better, and keep your momentum going."}
             </p>
+
+            {extraActivities.length > 0 ? (
+              <div className="form-card optional-addons-panel" style={{ marginTop: 24 }}>
+                <p className="section-kicker">Optional add-ons</p>
+                <ul className="optional-addons-list" style={{ margin: "12px 0 0", paddingLeft: 18, display: "grid", gap: 8 }}>
+                  {extraActivities.map((activity, index) => (
+                    <li key={`${activity.name}-${index}`}>
+                      <strong>{activity.name}</strong> — {formatCurrency(activity.price || 0)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             <div className="event-detail-capacity">
               <div className="capacity-heading">
@@ -102,13 +137,18 @@ export default async function EventPage({ params }) {
           <section className="event-booking-panel">
             <p className="section-kicker">Save your place</p>
             <h2>Ready to move?</h2>
+            {basePrice > 0 ? (
+              <p className="helper-text" style={{ marginTop: 0, marginBottom: 12 }}>
+                Main event: <strong>{formatCurrency(basePrice)}</strong>
+              </p>
+            ) : null}
             {isFull ? (
               <>
                 <p className="booking-status">This event is fully booked.</p>
                 <p className="helper-text">Check back in case a spot opens up.</p>
               </>
             ) : (
-              <BookingForm eventId={event.id} spotsLeft={spotsLeft} />
+              <BookingForm eventId={event.id} spotsLeft={spotsLeft} extraActivities={extraActivities} />
             )}
           </section>
         </div>

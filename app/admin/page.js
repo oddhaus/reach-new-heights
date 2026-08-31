@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { isAdminRequest } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { formatEventDate, formatEventTime } from "@/lib/format";
+import { formatEventDate, formatEventTime, formatCurrency } from "@/lib/format";
 import TopBar from "@/components/TopBar";
 import CreateEventForm from "@/components/CreateEventForm";
 import CategoryManager from "@/components/CategoryManager";
@@ -13,11 +13,11 @@ export const revalidate = 0;
 async function getEventsWithCounts() {
   let { data: events, error } = await supabaseAdmin
     .from("events")
-    .select("id, title, location, event_date, event_time, event_end_time, capacity, image_url")
+    .select("id, slug, title, location, event_date, event_time, event_end_time, capacity, image_url, base_price")
     .order("event_date", { ascending: true })
     .order("event_time", { ascending: true });
 
-  if (error?.message?.includes("event_end_time") || error?.message?.includes("image_url")) {
+  if (error?.message?.includes("event_end_time") || error?.message?.includes("image_url") || error?.message?.includes("base_price")) {
     const fallback = await supabaseAdmin
       .from("events")
       .select("id, title, location, event_date, event_time, capacity")
@@ -74,7 +74,7 @@ export default async function AdminPage() {
               const image = event.image_url || getEventImage(event.title).src;
               return (
                 <li key={event.id}>
-                  <Link href={`/admin/events/${event.id}`} className="admin-event-card">
+                  <Link href={`/admin/events/${event.slug || event.id}`} className="admin-event-card">
                     <div className="admin-event-card-copy">
                       <span className="event-date-chip">
                         {formatEventDate(event.event_date)} &middot; {formatEventTime(event.event_time)}{event.event_end_time ? ` - ${formatEventTime(event.event_end_time)}` : ""}
@@ -82,7 +82,7 @@ export default async function AdminPage() {
                       <h2 className="event-title">{event.title}</h2>
                       <p className="event-meta">{event.location || "Location announced soon"}</p>
                       <p className="helper-text" style={{ margin: 0 }}>
-                        {event.booked} / {event.capacity} booked &middot; {spotsLeft === 0 ? "Full" : `${spotsLeft} left`}
+                        {event.base_price ? `From ${formatCurrency(event.base_price)}` : "Free event"} &middot; {event.booked} / {event.capacity} booked &middot; {spotsLeft === 0 ? "Full" : `${spotsLeft} left`}
                       </p>
                     </div>
                     <img className="admin-event-image" src={image} alt="" />

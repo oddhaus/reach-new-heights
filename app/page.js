@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
-import { formatEventDate, formatEventTime } from "@/lib/format";
+import { formatEventDate, formatEventTime, formatCurrency } from "@/lib/format";
 import { getEventImage } from "@/lib/eventImages";
 import TopBar from "@/components/TopBar";
 
@@ -11,12 +11,19 @@ async function getUpcomingEvents() {
 
   let { data: events, error } = await supabase
     .from("events")
-    .select("id, title, description, location, event_date, event_time, event_end_time, capacity, image_url, category_id, difficulty, address, meeting_instructions, short_description, full_description, category:categories(name)")
+    .select("id, slug, title, description, location, event_date, event_time, event_end_time, capacity, image_url, category_id, difficulty, address, meeting_instructions, short_description, full_description, base_price, category:categories(name)")
     .gte("event_date", today)
     .order("event_date", { ascending: true })
     .order("event_time", { ascending: true });
 
-  if (error?.message?.includes("image_url")) {
+  if (
+    error && (
+      error.message?.includes("image_url") ||
+      error.message?.includes("base_price") ||
+      error.message?.includes("slug") ||
+      error.message?.includes("column \"slug\"")
+    )
+  ) {
     const fallback = await supabase
       .from("events")
       .select("id, title, description, location, event_date, event_time, capacity")
@@ -93,7 +100,7 @@ function EventCard({ event }) {
 
   return (
     <li>
-      <Link href={`/events/${event.id}`} className="event-card">
+      <Link href={`/events/${event.slug || event.id}`} className="event-card">
         <div className="event-image-wrap">
           <img className="event-image" src={image.src} alt="" />
           <span className="event-category">{image.category}</span>
@@ -108,6 +115,9 @@ function EventCard({ event }) {
           </div>
           <h2 className="event-title">{event.title}</h2>
           <p className="event-meta">{event.location || "Location announced soon"}</p>
+          <p className="event-card-price">
+            {Number(event.base_price ?? 0) > 0 ? `From ${formatCurrency(event.base_price)}` : "Free entry"}
+          </p>
           {event.short_description || event.description ? <p className="event-description">{event.short_description || event.description}</p> : null}
           <div className="event-card-footer">
             <div className="capacity-row">

@@ -428,6 +428,13 @@ body:has(.events-container) .hero-sub {
   margin: 0 0 12px;
 }
 
+.event-card-price {
+  margin: 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--reference-cyan);
+}
+
 .event-description {
   color: #6a7593;
   display: -webkit-box;
@@ -597,6 +604,18 @@ body:has(.events-container) .hero-sub {
   background: transparent;
   color: var(--navy-900);
   border: 1.5px solid #dcd6c8;
+}
+
+.btn-copy {
+  background: var(--amber-500);
+  color: var(--navy-950);
+  border: 1.5px solid var(--amber-500);
+  box-shadow: 0 8px 18px rgba(255, 187, 76, 0.22);
+}
+
+.btn-copy:hover {
+  background: var(--amber-400);
+  border-color: var(--amber-400);
 }
 
 .btn-danger {
@@ -1029,14 +1048,163 @@ body:has(.event-detail-container) .topbar::after {
   color: var(--reference-white);
 }
 
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.compact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #343743;
+  background: rgba(15, 16, 20, 0.6);
+  color: var(--reference-white);
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.choice-option:hover {
+  border-color: rgba(0, 194, 223, 0.7);
+  transform: translateY(-1px);
+}
+
+.choice-option.selected {
+  background: rgba(255, 187, 76, 0.14);
+  border-color: var(--amber-500);
+  box-shadow: inset 0 0 0 1px rgba(255, 187, 76, 0.35);
+}
+
+.choice-option input {
+  display: none;
+}
+
+.activity-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #343743;
+  background: rgba(15, 16, 20, 0.6);
+  color: var(--reference-white);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.activity-item:hover {
+  border-color: rgba(255, 187, 76, 0.7);
+  transform: translateY(-1px);
+}
+
+.activity-item.selected {
+  background: rgba(255, 187, 76, 0.12);
+  border-color: var(--amber-500);
+}
+
+.activity-item input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--amber-500);
+}
+
+.activity-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.activity-copy strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.activity-copy em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--reference-cyan);
+}
+
 .event-booking-panel .field input {
   background: #0f1014;
   border-color: #343743;
   color: var(--reference-white);
 }
 
+.optional-addons-panel {
+  background: #ffffff;
+  border-color: #e7e2d6;
+  color: var(--navy-900);
+}
+
+.optional-addons-panel .section-kicker {
+  color: var(--reference-cyan);
+}
+
+.optional-addons-list {
+  color: var(--navy-900);
+}
+
+.optional-addons-list li {
+  color: var(--navy-900);
+}
+
+.optional-addons-list strong {
+  color: var(--navy-950);
+}
+
 .event-booking-panel .field input:focus {
   border-color: var(--reference-cyan);
+}
+
+.booking-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.booking-actions .btn-primary {
+  flex: 1;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  min-width: 46px;
+  padding: 0;
+  background: transparent;
+  color: var(--amber-500);
+  border: 1px solid rgba(255, 187, 76, 0.5);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.btn-back:hover {
+  background: rgba(255, 187, 76, 0.1);
+  border-color: var(--amber-500);
 }
 
 .event-booking-panel .btn-primary {
@@ -1106,6 +1274,18 @@ body:has(.admin-surface) .form-card,
 body:has(.admin-surface) .event-card {
   background: var(--reference-surface);
   border-color: #292b33;
+}
+
+body:has(.admin-surface) .pricing-panel {
+  background: rgba(15, 16, 20, 0.9);
+  border-color: rgba(0, 194, 223, 0.28);
+}
+
+body:has(.admin-surface) .pricing-main,
+body:has(.admin-surface) .pricing-list,
+body:has(.admin-surface) .pricing-list li,
+body:has(.admin-surface) .pricing-panel strong {
+  color: var(--reference-white);
 }
 
 body:has(.admin-surface) .field label,

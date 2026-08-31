@@ -3,6 +3,42 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAdminRequest } from "@/lib/adminAuth";
 
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "event";
+}
+
+async function generateUniqueEventSlug(title, eventDate) {
+  const base = slugify(title);
+  const dateSuffix = eventDate ? String(eventDate).replace(/-/g, "") : new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  let candidate = `${base}-${dateSuffix}`;
+  let attempt = 1;
+
+  while (attempt <= 10) {
+    const { data, error } = await supabaseAdmin
+      .from("events")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+
+    if (error && !error.message?.toLowerCase().includes("column \"slug\" does not exist")) {
+      throw error;
+    }
+
+    if (!data) return candidate;
+
+    candidate = `${base}-${dateSuffix}-${attempt + 1}`;
+    attempt += 1;
+  }
+
+  return `${base}-${dateSuffix}-${Date.now().toString().slice(-4)}`;
+}
+
 export async function GET() {
   if (!(await isAdminRequest())) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -58,6 +94,48 @@ export async function POST(request) {
   const event_end_time = body.get("event_end_time") || null;
   const capacity = parseInt(body.get("capacity"), 10);
   const image = body.get("image");
+  const base_price_raw = body.get("base_price");
+  const extra_activities_raw = body.get("extra_activities") || "[]";
+
+  let slug = "";
+  try {
+    slug = await generateUniqueEventSlug(title, event_date);
+  } catch (error) {
+    return NextResponse.json({ error: error.message || "Could not generate event slug." }, { status: 500 });
+  }
+
+  let base_price = 0;
+  if (base_price_raw !== null && base_price_raw !== undefined && base_price_raw !== "") {
+    base_price = Number.parseFloat(base_price_raw);
+    if (!Number.isFinite(base_price) || base_price < 0) {
+      return NextResponse.json({ error: "Event price must be zero or greater." }, { status: 400 });
+    }
+  }
+
+  let extra_activities = [];
+  try {
+    const parsed = JSON.parse(extra_activities_raw);
+    if (Array.isArray(parsed)) {
+      extra_activities = parsed
+        .map((activity) => {
+          const name = String(activity?.name || "").trim();
+          const price = Number.parseFloat(activity?.price ?? 0);
+
+          if (!name && Number.isNaN(price)) return null;
+          if (!name) {
+            throw new Error("Each activity needs a name.");
+          }
+          if (!Number.isFinite(price) || price < 0) {
+            throw new Error("Each activity price must be zero or greater.");
+          }
+
+          return { name, price: Number(price.toFixed(2)) };
+        })
+        .filter(Boolean);
+    }
+  } catch {
+    return NextResponse.json({ error: "Extra activities must be valid items with a name and price." }, { status: 400 });
+  }
 
   if (image && image.size > 5 * 1024 * 1024) {
     return NextResponse.json({ error: "Event images must be 5 MB or smaller." }, { status: 400 });
@@ -126,6 +204,9 @@ export async function POST(request) {
       meeting_instructions: meeting_instructions || null,
       short_description: short_description || null,
       full_description: full_description || description || null,
+      slug,
+      base_price: Number(base_price.toFixed(2)),
+      extra_activities,
     })
     .select()
     .single();

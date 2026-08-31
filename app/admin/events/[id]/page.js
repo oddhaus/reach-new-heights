@@ -2,10 +2,12 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { isAdminRequest } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { formatEventDate, formatEventTime } from "@/lib/format";
+import { formatEventDate, formatEventTime, formatCurrency } from "@/lib/format";
 import TopBar from "@/components/TopBar";
 import DeleteEventButton from "@/components/DeleteEventButton";
 import ShareLinkButton from "@/components/ShareLinkButton";
+import CreateEventForm from "@/components/CreateEventForm";
+import RegistrantDetailsModal from "@/components/RegistrantDetailsModal";
 
 export const revalidate = 0;
 
@@ -16,21 +18,63 @@ export default async function AdminEventPage({ params }) {
 
   const { id } = await params;
 
-  const { data: event } = await supabaseAdmin
+  let { data: event, error } = await supabaseAdmin
     .from("events")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
+
+  if (!event) {
+    const slugMatch = await supabaseAdmin
+      .from("events")
+      .select("*")
+      .eq("slug", id)
+      .maybeSingle();
+
+    event = slugMatch.data;
+    error = slugMatch.error;
+  }
+
+  if (error && (error.message?.includes("slug") || error.message?.includes("column \"slug\""))) {
+    const fallback = await supabaseAdmin
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (fallback.data) {
+      event = fallback.data;
+      error = null;
+    }
+  }
 
   if (!event) notFound();
 
-  const { data: bookings } = await supabaseAdmin
+  const eventId = event?.id || id;
+
+  let bookingsResult = await supabaseAdmin
     .from("bookings")
-    .select("id, name, phone, email, created_at")
-    .eq("event_id", id)
+    .select("*")
+    .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
+  if (bookingsResult.error && /column .* does not exist|column.* not found|could not find the column/i.test(bookingsResult.error.message || "")) {
+    bookingsResult = await supabaseAdmin
+      .from("bookings")
+      .select("id, name, phone, email, created_at")
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: true });
+  }
+
+  const bookings = bookingsResult.data || [];
+
+  const { data: categories } = await supabaseAdmin
+    .from("categories")
+    .select("id, name")
+    .order("name");
+
   const list = bookings || [];
+  const extraActivities = Array.isArray(event.extra_activities) ? event.extra_activities : [];
 
   return (
     <>
@@ -46,12 +90,34 @@ export default async function AdminEventPage({ params }) {
         </div>
         <h1 className="hero-heading">{event.title}</h1>
         <p className="hero-sub">
-          {event.location} &middot; {list.length} / {event.capacity} booked
+          {event.location} &middot; {list.length} / {event.capacity} booked &middot; {event.base_price ? formatCurrency(event.base_price) : "Free"}
         </p>
 
         <div className="btn-row" style={{ marginBottom: 24 }}>
-          <ShareLinkButton eventId={event.id} title={event.title} />
+          <ShareLinkButton eventId={event.id} eventSlug={event.slug} title={event.title} />
           <DeleteEventButton eventId={event.id} />
+        </div>
+
+        <div className="form-card pricing-panel" style={{ marginBottom: 24 }}>
+          <p className="section-kicker">Pricing</p>
+          <p className="pricing-main" style={{ marginTop: 8, marginBottom: 0 }}>
+            <strong>Main event:</strong> {event.base_price ? formatCurrency(event.base_price) : "Free"}
+          </p>
+          {extraActivities.length > 0 ? (
+            <ul className="pricing-list" style={{ margin: "12px 0 0", paddingLeft: 18 }}>
+              {extraActivities.map((activity, index) => (
+                <li key={`${activity.name}-${index}`}>
+                  {activity.name}: {formatCurrency(activity.price || 0)}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="helper-text" style={{ marginBottom: 0 }}>No add-on activities configured.</p>
+          )}
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <CreateEventForm categories={categories || []} existingEvent={event} mode="edit" />
         </div>
 
         <h2 className="section-heading" style={{ marginTop: 0 }}>
@@ -61,28 +127,7 @@ export default async function AdminEventPage({ params }) {
         {list.length === 0 ? (
           <div className="empty-state">No bookings yet.</div>
         ) : (
-          <div className="form-card" style={{ overflowX: "auto" }}>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Email</th>
-                  <th>Booked</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((b) => (
-                  <tr key={b.id}>
-                    <td>{b.name}</td>
-                    <td>{b.phone}</td>
-                    <td>{b.email || "—"}</td>
-                    <td>{new Date(b.created_at).toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RegistrantDetailsModal bookings={list} />
         )}
       </main>
     </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const initialState = {
@@ -17,17 +17,103 @@ const initialState = {
   event_time: "",
   event_end_time: "",
   capacity: 20,
+  base_price: "",
 };
 
-export default function CreateEventForm({ categories }) {
+const emptyActivity = { name: "", price: "" };
+
+export default function CreateEventForm({ categories, existingEvent = null, mode = "create" }) {
   const router = useRouter();
-  const [form, setForm] = useState(initialState);
+  const [form, setForm] = useState(() => {
+    const baseValues = existingEvent ? {
+      title: existingEvent.title || "",
+      category_id: existingEvent.category_id || "",
+      difficulty: existingEvent.difficulty || "All Levels",
+      short_description: existingEvent.short_description || "",
+      full_description: existingEvent.full_description || "",
+      image: null,
+      location: existingEvent.location || "",
+      address: existingEvent.address || "",
+      meeting_instructions: existingEvent.meeting_instructions || "",
+      event_date: existingEvent.event_date || "",
+      event_time: existingEvent.event_time || "",
+      event_end_time: existingEvent.event_end_time || "",
+      capacity: existingEvent.capacity || 20,
+      base_price: existingEvent.base_price ?? "",
+    } : initialState;
+
+    return baseValues;
+  });
+  const [activities, setActivities] = useState(() => {
+    if (!existingEvent || !Array.isArray(existingEvent.extra_activities) || existingEvent.extra_activities.length === 0) {
+      return [{ ...emptyActivity }];
+    }
+
+    return existingEvent.extra_activities.map((activity) => ({
+      name: activity.name || "",
+      price: activity.price ?? "",
+    }));
+  });
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
+  useEffect(() => {
+    setIsOpen(false);
+
+    if (!existingEvent) {
+      setForm(initialState);
+      setActivities([{ ...emptyActivity }]);
+      return;
+    }
+
+    setForm({
+      title: existingEvent.title || "",
+      category_id: existingEvent.category_id || "",
+      difficulty: existingEvent.difficulty || "All Levels",
+      short_description: existingEvent.short_description || "",
+      full_description: existingEvent.full_description || "",
+      image: null,
+      location: existingEvent.location || "",
+      address: existingEvent.address || "",
+      meeting_instructions: existingEvent.meeting_instructions || "",
+      event_date: existingEvent.event_date || "",
+      event_time: existingEvent.event_time || "",
+      event_end_time: existingEvent.event_end_time || "",
+      capacity: existingEvent.capacity || 20,
+      base_price: existingEvent.base_price ?? "",
+    });
+    setActivities(
+      Array.isArray(existingEvent.extra_activities) && existingEvent.extra_activities.length > 0
+        ? existingEvent.extra_activities.map((activity) => ({
+            name: activity.name || "",
+            price: activity.price ?? "",
+          }))
+        : [{ ...emptyActivity }]
+    );
+  }, [existingEvent]);
+
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function updateActivity(index, field, value) {
+    setActivities((current) =>
+      current.map((activity, activityIndex) =>
+        activityIndex === index ? { ...activity, [field]: value } : activity
+      )
+    );
+  }
+
+  function addActivity() {
+    setActivities((current) => [...current, { ...emptyActivity }]);
+  }
+
+  function removeActivity(index) {
+    setActivities((current) => {
+      if (current.length === 1) return [{ ...emptyActivity }];
+      return current.filter((_, activityIndex) => activityIndex !== index);
+    });
   }
 
   async function handleSubmit(e) {
@@ -36,15 +122,31 @@ export default function CreateEventForm({ categories }) {
     setError("");
 
     try {
-      const res = await fetch("/api/events", {
-        method: "POST",
-        body: (() => {
-          const payload = new FormData();
-          Object.entries(form).forEach(([key, value]) => {
-            if (value !== null && value !== "") payload.append(key, value);
-          });
-          return payload;
-        })(),
+      const payload = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        if (value !== null && value !== "") payload.append(key, value);
+      });
+
+      const normalizedActivities = activities
+        .map((activity) => ({
+          name: String(activity.name || "").trim(),
+          price: String(activity.price || "").trim(),
+        }))
+        .filter((activity) => activity.name || activity.price)
+        .map((activity) => ({
+          name: activity.name,
+          price: Number.parseFloat(activity.price || "0"),
+        }))
+        .filter((activity) => activity.name && Number.isFinite(activity.price) && activity.price >= 0);
+
+      payload.append("extra_activities", JSON.stringify(normalizedActivities));
+
+      const url = existingEvent ? `/api/events/${existingEvent.id}` : "/api/events";
+      const method = existingEvent ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        body: payload,
       });
       const data = await res.json();
 
@@ -54,9 +156,15 @@ export default function CreateEventForm({ categories }) {
         return;
       }
 
-      setForm(initialState);
-      setStatus("idle");
-      setIsOpen(false);
+      if (!existingEvent) {
+        setForm(initialState);
+        setActivities([{ ...emptyActivity }]);
+        setStatus("idle");
+        setIsOpen(false);
+      } else {
+        setStatus("idle");
+        setIsOpen(false);
+      }
       router.refresh();
     } catch {
       setError("Couldn't reach the server. Try again.");
@@ -69,8 +177,8 @@ export default function CreateEventForm({ categories }) {
       <button type="button" className="create-event-trigger" onClick={() => setIsOpen(true)}>
         <span className="create-event-plus" aria-hidden="true">+</span>
         <span>
-          <strong>Create new event</strong>
-          <small>Add a session, image, and booking details</small>
+          <strong>{existingEvent ? "Edit event" : "Create new event"}</strong>
+          <small>{existingEvent ? "Update your event details" : "Add a session, image, and booking details"}</small>
         </span>
       </button>
     );
@@ -81,7 +189,7 @@ export default function CreateEventForm({ categories }) {
       <div className="create-event-heading">
         <div>
           <p className="section-kicker">Event setup</p>
-          <h2>New event</h2>
+          <h2>{existingEvent ? "Edit event" : "New event"}</h2>
         </div>
         <button type="button" className="text-button" onClick={() => setIsOpen(false)}>Close</button>
       </div>
@@ -164,6 +272,59 @@ export default function CreateEventForm({ categories }) {
       </div>
 
       <div className="field">
+        <label htmlFor="base_price">Main event price</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #d9d1c5", borderRadius: 12, background: "#fff", padding: "0 12px" }}>
+          <span aria-hidden="true">GH₵</span>
+          <input
+            id="base_price"
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.base_price}
+            onChange={(e) => update("base_price", e.target.value)}
+            placeholder="0.00"
+            style={{ border: "none", outline: "none", width: "100%", padding: "12px 0" }}
+          />
+        </div>
+      </div>
+
+      <div className="field">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <label>Extra activities</label>
+          <button type="button" className="text-button" onClick={addActivity}>+ Add activity</button>
+        </div>
+
+        <div style={{ display: "grid", gap: 12, marginTop: 10 }}>
+          {activities.map((activity, index) => (
+            <div key={index} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 1fr) auto", gap: 8, alignItems: "center" }}>
+              <input
+                type="text"
+                value={activity.name}
+                onChange={(e) => updateActivity(index, "name", e.target.value)}
+                placeholder="e.g. Trail lunch"
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #d9d1c5", borderRadius: 12, background: "#fff", padding: "0 12px" }}>
+                <span aria-hidden="true">GH₵</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={activity.price}
+                  onChange={(e) => updateActivity(index, "price", e.target.value)}
+                  placeholder="0.00"
+                  style={{ border: "none", outline: "none", width: "100%", padding: "12px 0" }}
+                />
+              </div>
+              <button type="button" className="text-button" onClick={() => removeActivity(index)}>
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <p className="helper-text">Optional upsells like gear rental, a picnic, or guide tips.</p>
+      </div>
+
+      <div className="field">
         <label htmlFor="address">Address</label>
         <input id="address" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="e.g. Trailhead Lot #2, Angeles National Forest, CA" />
       </div>
@@ -195,7 +356,7 @@ export default function CreateEventForm({ categories }) {
       </div>
 
       <button type="submit" className="btn btn-amber" disabled={status === "submitting"}>
-        {status === "submitting" ? "Creating..." : "Create event"}
+        {status === "submitting" ? (existingEvent ? "Updating..." : "Creating...") : (existingEvent ? "Update event" : "Create event")}
       </button>
     </form>
   );
