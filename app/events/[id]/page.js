@@ -5,6 +5,7 @@ import { formatEventDate, formatEventTime, formatCurrency } from "@/lib/format";
 import { getEventImage } from "@/lib/eventImages";
 import TopBar from "@/components/TopBar";
 import BookingForm from "@/components/BookingForm";
+import ShareLinkButton from "@/components/ShareLinkButton";
 
 export const revalidate = 0;
 
@@ -49,7 +50,7 @@ async function getEvent(id) {
   const { data: countRow } = await supabase
     .from("event_booking_counts")
     .select("booked")
-    .eq("event_id", id)
+    .eq("event_id", event.id)
     .maybeSingle();
 
   return { ...event, booked: countRow?.booked || 0 };
@@ -75,9 +76,12 @@ export default async function EventPage({ params }) {
           <Link href="/" className="back-link">
             &larr; All events
           </Link>
-          <div className="event-card-date">
-            <span>{formatEventDate(event.event_date)}</span>
-            <span>{formatEventTime(event.event_time)}{event.event_end_time ? ` - ${formatEventTime(event.event_end_time)}` : ""}</span>
+          <div className="event-detail-date-actions">
+            <div className="event-card-date">
+              <span>{formatEventDate(event.event_date)}</span>
+              <span>{formatEventTime(event.event_time)}{event.event_end_time ? ` - ${formatEventTime(event.event_end_time)}` : ""}</span>
+            </div>
+            <ShareLinkButton eventId={event.id} eventSlug={event.slug} title={event.title} copyOnly />
           </div>
         </div>
 

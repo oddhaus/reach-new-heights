@@ -879,6 +879,16 @@ body:has(.event-detail-container) .topbar::after {
   text-align: right;
 }
 
+.event-detail-date-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.event-detail-date-actions .event-card-date {
+  color: var(--reference-cyan);
+}
+
 .admin-surface .event-detail-nav .event-date-chip {
   margin-bottom: 0;
 }
@@ -1229,6 +1239,10 @@ body:has(.event-detail-container) .topbar::after {
   .event-detail-nav .event-card-date {
     flex-direction: column;
     gap: 3px;
+  }
+
+  .event-detail-date-actions {
+    gap: 8px;
   }
 
   .event-detail-layout {

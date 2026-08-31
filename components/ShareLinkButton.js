@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function ShareLinkButton({ eventId, eventSlug, title }) {
+export default function ShareLinkButton({ eventId, eventSlug, title, copyOnly = false }) {
   const [copied, setCopied] = useState(false);
 
   function getUrl() {
@@ -13,6 +13,7 @@ export default function ShareLinkButton({ eventId, eventSlug, title }) {
     try {
       await navigator.clipboard.writeText(getUrl());
       setCopied(true);
+      alert("Event link copied to your clipboard.");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       alert(getUrl());
@@ -41,7 +42,14 @@ export default function ShareLinkButton({ eventId, eventSlug, title }) {
           justifyContent: "center",
         }}
       >
-        {copied ? "✓" : (
+        {copied ? "✓" : copyOnly ? (
+          <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="2.5" />
+            <circle cx="6" cy="12" r="2.5" />
+            <circle cx="18" cy="19" r="2.5" />
+            <path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5" />
+          </svg>
+        ) : (
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="9" y="9" width="11" height="11" rx="2" />
             <path d="M5 15V5a2 2 0 0 1 2-2h10" />
@@ -49,7 +57,7 @@ export default function ShareLinkButton({ eventId, eventSlug, title }) {
         )}
       </button>
 
-      <button
+      {!copyOnly && <button
         type="button"
         className="btn"
         onClick={handleWhatsAppShare}
@@ -71,7 +79,7 @@ export default function ShareLinkButton({ eventId, eventSlug, title }) {
         <svg viewBox="0 0 32 32" width="18" height="18" aria-hidden="true" fill="currentColor">
           <path d="M16.2 4.1c-6.7 0-12.1 5.1-12.1 11.4 0 2.1.6 4.2 1.7 6l-1.8 6.2 6.4-1.8c1.8 1 3.8 1.6 6 1.6 6.7 0 12.1-5.1 12.1-11.4s-5.4-11.4-12.1-11.4zm6.9 15.8c-.3.8-1.8 1.6-2.6 1.7-.7.1-1.6.1-2.6-.1-1.1-.2-2.4-.8-4.1-1.9-1.5-1.2-2.7-2.9-3.1-3.4-.4-.5-1.6-2.1-1.6-3.9 0-1.8 1-2.8 1.5-3.3.4-.4.8-.5 1.1-.5h.8c.3 0 .7.1.9.6l1.2 2.8c.1.3.2.6.1.9-.2.4-.4.8-.7 1.1-.2.2-.4.5-.6.7-.2.3-.4.5-.2 1 .2.5 1 1.7 2.2 2.8 1.5 1.4 2.8 1.9 3.3 2.1.5.2.8.2 1-.1.3-.3.7-.9.9-1.3.2-.4.6-.4.9-.2l2-.9c.3-.2.7-.1.9.1l1.6 1.1c.2.2.3.5.2.8-.4.3-2 1.1-2.8 1.4z"/>
         </svg>
-      </button>
+      </button>}
     </div>
   );
 }
