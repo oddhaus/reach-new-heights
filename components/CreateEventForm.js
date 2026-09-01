@@ -148,7 +148,20 @@ export default function CreateEventForm({ categories, existingEvent = null, mode
         method,
         body: payload,
       });
-      const data = await res.json();
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        // Response is not JSON (likely an error page or server error)
+        if (res.status === 401) {
+          setError("Your session has expired. Please log in again.");
+        } else {
+          setError(`Server error (${res.status}). Please try again.`);
+        }
+        setStatus("error");
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error || "Could not create event.");
